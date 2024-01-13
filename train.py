@@ -145,7 +145,7 @@ def infer_by_models(models, embeddings, rays, hparams, white_back):
     return results
 
 
-def train_epoch(epoch, train_loader, models, embeddings, hparams, loss_func, optimizer, scheduler, white_back, writer):
+def train_epoch(epoch, train_loader, models, embeddings, hparams, loss_func, optimizer, white_back, writer):
     for model in models:
         model.train()
 
@@ -166,9 +166,6 @@ def train_epoch(epoch, train_loader, models, embeddings, hparams, loss_func, opt
         train_loss.backward()
         # 更新权重
         optimizer.step()
-        # 更新学习率
-        if scheduler is not None:
-            scheduler.step()
 
         # 指标计算
         typ = 'fine' if 'rgb_fine' in results else 'coarse'
@@ -335,7 +332,6 @@ def main():
                     hparams=hparams,
                     loss_func=loss_func,
                     optimizer=optimizer,
-                    scheduler=scheduler,
                     white_back=train_dataset.white_back,
                     writer=writer)
 
@@ -349,6 +345,12 @@ def main():
                       white_back=train_dataset.white_back,
                       writer=writer)
 
+        logging.info('=> =========================== Update LR ============================')
+        # 更新学习率
+        if scheduler is not None:
+            scheduler.step()
+
+        logging.info('=> ======================== Save Checkpoint =========================')
         checkpoint_filename = checkpoint_dir + f'/checkpoint_{epoch + 1:>03}_loss{val_loss:.5f}_psnr{val_psnr:.5f}_coarse.ckpt'
         torch.save({
             'epoch': epoch + 1,
